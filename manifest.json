@@ -1,0 +1,11 @@
+{
+	"id": "horizontal-blocks",
+	"name": "Horizontal Blocks",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "This plugin lets you create horizontally arranged, resizable blocks inside your notes—each block supports live-editable markdown with instant preview. Perfect for side-by-side comparisons, visual organization, or creative layouts beyond the standard vertical flow.",
+	"author": "Immanuel Michael",
+	"authorUrl": "https://obsidian.md",
+	"fundingUrl": "https://obsidian.md/pricing",
+	"isDesktopOnly": false
+}
