@@ -16,7 +16,8 @@ Bring Notion-style layouts to Obsidian — with side-by-side, resizable markdown
 
 ## 🚀 Examples
 
-Code 1:
+### Code 1:
+
 <pre>
 ```horizontal  
 ### Block 1  
@@ -27,10 +28,12 @@ This is the right block.
 ```
 </pre>
 
-Preview 1:
+### Preview 1:
+
 ![img.png](images/preview1.png)
 ---
-Code 2:
+
+### Code 2:
 <pre>
 ```horizontal  
 ### Left Block  
@@ -44,11 +47,12 @@ This is the right block.
 ```
 </pre>
 
-Preview 2:
+### Preview 2:
+
 ![img.png](images/preview2.png)
 ---
-Code 3:
-<pre>
+### Code 3:
+ <pre>
 ```horizontal
 ### Left Block
 This is free text
@@ -63,9 +67,11 @@ This is a ***formatted*** **text**
 ```
 </pre>
 
-Preview 3:
+### Preview 3:
+
 ![img_1.png](images/preview3.png)
 ---
+
 ## 🐞 Contributing
 
 Contributions via bug reports, bug fixes, documentation, and general improvements are always welcome. For more major
@@ -73,7 +79,9 @@ feature work, make an issue about the feature idea / reach out to me so we can j
 implement it.
 
 ---
+
 ## 👏🏼 Support
+
 Have you found the **Horizontal Blocks** plugin helpful, and want to support it? I welcome donations to support future development efforts. However, I typically do not accept payments for bug bounties or feature requests, as financial incentives can create stress and expectations that I prefer to avoid in my hobby project!
 
 Support @iCodeAlchemy:
