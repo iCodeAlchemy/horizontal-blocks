@@ -1,6 +1,6 @@
-# 🧱 Horizontal Blocks Plugin for Obsidian
+# 🧱 Horizontal Blocks Plugin
 
-Bring Notion-style layouts to Obsidian — with side-by-side, resizable markdown blocks that support full Obsidian syntax including images, embeds, and internal links.
+Bring Notion-style layouts with blocks side-by-side, resizable markdown blocks that support full Obsidian syntax including images, embeds, and internal links.
 
 ---
 
