@@ -66,11 +66,12 @@ This is a ***formatted*** **text**
 Preview 3:
 ![img_1.png](images/preview3.png)
 ---
-## Contributing
+## 🐞 Contributing
 
 Contributions via bug reports, bug fixes, documentation, and general improvements are always welcome. For more major
 feature work, make an issue about the feature idea / reach out to me so we can judge feasibility and how best to
 implement it.
+
 ---
 ## 👏🏼 Support
 Have you found the **Horizontal Blocks** plugin helpful, and want to support it? I welcome donations to support future development efforts. However, I typically do not accept payments for bug bounties or feature requests, as financial incentives can create stress and expectations that I prefer to avoid in my hobby project!
