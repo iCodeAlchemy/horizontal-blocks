@@ -3,7 +3,7 @@
 	"name": "Horizontal Blocks",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Bring Notion-style layouts to Obsidian — with side-by-side, resizable markdown blocks that support full Obsidian syntax including images, embeds, and internal links.",
+	"description": "Bring Notion-style layouts with blocks side-by-side, resizable markdown blocks that support full Obsidian syntax including images, embeds, and internal links.",
 	"author": "iCodeAlchemy",
 	"authorUrl": "https://buymeacoffee.com/icodealchemy",
 	"fundingUrl": "https://buymeacoffee.com/icodealchemy",
