@@ -63,13 +63,9 @@ export default class HorizontalBlocksPlugin extends Plugin {
     preview.addClass("markdown-rendered");
 
     MarkdownRenderer.render(this.app, markdown, preview, sourcePath, this).then(() => {
-      // Auto-fit any embedded images inside this block
       const images = preview.querySelectorAll("img");
       images.forEach((img: HTMLImageElement) => {
-        img.style.maxWidth = "100%";
-        img.style.height = "auto";
-        img.style.display = "block";
-        img.style.margin = "0 auto";
+        img.classList.add ("horizontal-block-image");
       });
     });
     
