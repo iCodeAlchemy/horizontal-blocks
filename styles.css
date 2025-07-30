@@ -53,3 +53,25 @@
   display: block;
   margin: 0 auto;
 }
+
+.flex-grow {
+  flex: 1;
+}
+
+.flex-fixed {
+  flex: 0 0 var(--block-fixed-width, auto);
+  width: var(--block-fixed-width, auto);
+}
+
+.resizing-cursor {
+  cursor: col-resize !important;
+}
+
+.flex-fixed {
+  flex: 0 0 var(--block-fixed-width, auto);
+  width: var(--block-fixed-width, auto);
+}
+
+.flex-grow {
+  flex: 1;
+}

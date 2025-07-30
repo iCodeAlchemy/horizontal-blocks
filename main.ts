@@ -24,9 +24,10 @@ export default class HorizontalBlocksPlugin extends Plugin {
         const savedWidth = savedLayout[`width-${index}`];
 
         if (savedWidth) {
-          block.style.flex = `0 0 ${savedWidth}px`;
+          block.classList.add("flex-fixed");
+          block.style.setProperty('--block-fixed-width', `${savedWidth}px`);
         } else {
-          block.style.flex = `1`;
+          block.classList.add("flex-grow");
         }
 
         blocks.push(block);
@@ -83,7 +84,7 @@ export default class HorizontalBlocksPlugin extends Plugin {
       isResizing = true;
       startX = e.clientX;
       startLeftWidth = left.getBoundingClientRect().width;
-      document.body.style.cursor = 'col-resize';
+      document.body.classList.add("resizing-cursor");
 
       document.addEventListener("mousemove", mouseMoveHandler);
       document.addEventListener("mouseup", mouseUpHandler);
@@ -93,13 +94,18 @@ export default class HorizontalBlocksPlugin extends Plugin {
       if (!isResizing) return;
       const dx = e.clientX - startX;
       const newLeftWidth = startLeftWidth + dx;
-      left.style.flex = `0 0 ${newLeftWidth}px`;
-      right.style.flex = `1`;
+      left.classList.add("flex-fixed");
+      left.classList.remove("flex-grow");
+      left.style.setProperty('--block-fixed-width', `${newLeftWidth}px`);
+
+      right.classList.add("flex-grow");
+      right.classList.remove("flex-fixed");
+      right.style.removeProperty('--block-fixed-width');
     };
 
     const mouseUpHandler = async () => {
       isResizing = false;
-      document.body.style.cursor = '';
+      document.body.classList.remove("resizing-cursor");
       document.removeEventListener("mousemove", mouseMoveHandler);
       document.removeEventListener("mouseup", mouseUpHandler);
 
