@@ -60,12 +60,12 @@ export default class HorizontalBlocksPlugin extends Plugin {
 
     const preview = document.createElement("div");
     preview.className = "md-preview";
-    preview.addClass("markdown-rendered");
+    preview.classList.add("markdown-rendered");
 
     MarkdownRenderer.render(this.app, markdown, preview, sourcePath, this).then(() => {
       const images = preview.querySelectorAll("img");
       images.forEach((img: HTMLImageElement) => {
-        img.classList.add ("horizontal-block-image");
+        img.classList.add("horizontal-block-image");
       });
     });
     
