@@ -66,12 +66,3 @@
 .resizing-cursor {
   cursor: col-resize !important;
 }
-
-.flex-fixed {
-  flex: 0 0 var(--block-fixed-width, auto);
-  width: var(--block-fixed-width, auto);
-}
-
-.flex-grow {
-  flex: 1;
-}

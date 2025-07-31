@@ -4,8 +4,6 @@ export default class HorizontalBlocksPlugin extends Plugin {
   private settings: Record<string, any> = {};
 
   async onload() {
-    console.log("Horizontal Blocks Plugin loaded");
-
     // Load stored block widths
     this.settings = (await this.loadData()) || {};
 
@@ -48,6 +46,9 @@ export default class HorizontalBlocksPlugin extends Plugin {
     });
   }
 
+  onunload() {
+  }
+
   createRenderedBlock(markdown: string, sourcePath: string, title?: string): HTMLElement {
     const block = document.createElement("div");
     block.className = "resizable-block";
@@ -86,8 +87,8 @@ export default class HorizontalBlocksPlugin extends Plugin {
       startLeftWidth = left.getBoundingClientRect().width;
       document.body.classList.add("resizing-cursor");
 
-      document.addEventListener("mousemove", mouseMoveHandler);
-      document.addEventListener("mouseup", mouseUpHandler);
+      this.registerDomEvent(document, "mousemove", mouseMoveHandler);
+      this.registerDomEvent(document, "mouseup", mouseUpHandler);
     };
 
     const mouseMoveHandler = (e: MouseEvent) => {
@@ -106,8 +107,6 @@ export default class HorizontalBlocksPlugin extends Plugin {
     const mouseUpHandler = async () => {
       isResizing = false;
       document.body.classList.remove("resizing-cursor");
-      document.removeEventListener("mousemove", mouseMoveHandler);
-      document.removeEventListener("mouseup", mouseUpHandler);
 
       const finalWidth = left.getBoundingClientRect().width;
       const layoutKey = `horizontal-block-layout-${blockId}`;
@@ -116,7 +115,7 @@ export default class HorizontalBlocksPlugin extends Plugin {
       await this.saveData(this.settings);
     };
 
-    resizer.addEventListener("mousedown", mouseDownHandler);
+    this.registerDomEvent(resizer, "mousedown", mouseDownHandler);
   }
 
   async hashString(str: string): Promise<string> {
