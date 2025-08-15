@@ -59,8 +59,14 @@
 }
 
 .flex-fixed {
-  flex: 0 0 var(--block-fixed-width, auto);
-  width: var(--block-fixed-width, auto);
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* Use CSS custom properties set on the container to control block widths */
+.horizontal-block-container .resizable-block.flex-fixed.has-width {
+  width: var(--block-width);
+  flex: 0 0 var(--block-width);
 }
 
 .resizing-cursor {

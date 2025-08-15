@@ -2,6 +2,7 @@ import { Plugin, MarkdownRenderer } from "obsidian";
 
 export default class HorizontalBlocksPlugin extends Plugin {
   private settings: Record<string, any> = {};
+  private styleEl?: HTMLStyleElement;
 
   async onload() {
     // Load stored block widths
@@ -23,7 +24,7 @@ export default class HorizontalBlocksPlugin extends Plugin {
 
         if (savedWidth) {
           block.classList.add("flex-fixed");
-          block.style.setProperty('--block-fixed-width', `${savedWidth}px`);
+          this.applyBlockWidth(block, savedWidth);
         } else {
           block.classList.add("flex-grow");
         }
@@ -80,6 +81,8 @@ export default class HorizontalBlocksPlugin extends Plugin {
     let isResizing = false;
     let startX = 0;
     let startLeftWidth = 0;
+    let mouseMoveListener: ((e: MouseEvent) => void) | null = null;
+    let mouseUpListener: ((e: MouseEvent) => void) | null = null;
 
     const mouseDownHandler = (e: MouseEvent) => {
       isResizing = true;
@@ -87,32 +90,50 @@ export default class HorizontalBlocksPlugin extends Plugin {
       startLeftWidth = left.getBoundingClientRect().width;
       document.body.classList.add("resizing-cursor");
 
-      this.registerDomEvent(document, "mousemove", mouseMoveHandler);
-      this.registerDomEvent(document, "mouseup", mouseUpHandler);
-    };
-
-    const mouseMoveHandler = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const dx = e.clientX - startX;
-      const newLeftWidth = startLeftWidth + dx;
+      // Prepare classes for resizing state
       left.classList.add("flex-fixed");
       left.classList.remove("flex-grow");
-      left.style.setProperty('--block-fixed-width', `${newLeftWidth}px`);
-
       right.classList.add("flex-grow");
       right.classList.remove("flex-fixed");
-      right.style.removeProperty('--block-fixed-width');
-    };
 
-    const mouseUpHandler = async () => {
-      isResizing = false;
-      document.body.classList.remove("resizing-cursor");
+      // Create fresh event handlers for this resize session
+      mouseMoveListener = (e: MouseEvent) => {
+        if (!isResizing) return;
+        const dx = e.clientX - startX;
+        const newLeftWidth = startLeftWidth + dx;
+        left.classList.add("flex-fixed");
+        left.classList.remove("flex-grow");
+        this.applyBlockWidth(left, newLeftWidth);
 
-      const finalWidth = left.getBoundingClientRect().width;
-      const layoutKey = `horizontal-block-layout-${blockId}`;
-      if (!this.settings[layoutKey]) this.settings[layoutKey] = {};
-      this.settings[layoutKey][`width-${index}`] = finalWidth;
-      await this.saveData(this.settings);
+        right.classList.add("flex-grow");
+        right.classList.remove("flex-fixed");
+        this.removeBlockWidth(right);
+      };
+
+      mouseUpListener = async () => {
+        isResizing = false;
+        document.body.classList.remove("resizing-cursor");
+
+        // Clean up event listeners
+        if (mouseMoveListener) {
+          document.removeEventListener("mousemove", mouseMoveListener);
+          mouseMoveListener = null;
+        }
+        if (mouseUpListener) {
+          document.removeEventListener("mouseup", mouseUpListener);
+          mouseUpListener = null;
+        }
+
+        const finalWidth = left.getBoundingClientRect().width;
+        const layoutKey = `horizontal-block-layout-${blockId}`;
+        if (!this.settings[layoutKey]) this.settings[layoutKey] = {};
+        this.settings[layoutKey][`width-${index}`] = finalWidth;
+        await this.saveData(this.settings);
+      };
+
+      // Add event listeners
+      document.addEventListener("mousemove", mouseMoveListener);
+      document.addEventListener("mouseup", mouseUpListener);
     };
 
     this.registerDomEvent(resizer, "mousedown", mouseDownHandler);
@@ -126,4 +147,16 @@ export default class HorizontalBlocksPlugin extends Plugin {
       .join('')
       .slice(0, 16); // Shorten for key
   }
+
+  private applyBlockWidth(block: HTMLElement, width: number) {
+    block.classList.add('has-width');
+    // Use inline style with CSS custom property
+    block.setAttribute('style', `--block-width: ${Math.round(width)}px`);
+  }
+
+  private removeBlockWidth(block: HTMLElement) {
+    block.classList.remove('has-width');
+    block.removeAttribute('style');
+  }
+
 }

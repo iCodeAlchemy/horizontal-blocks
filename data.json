@@ -21,12 +21,19 @@
     "width-0": 167.4375
   },
   "horizontal-block-layout-d5739cadad459bf3": {
-    "width-0": 164.4375
+    "width-0": 153
   },
   "horizontal-block-layout-972d95e8a9281669": {
-    "width-0": 438.4375
+    "width-0": 424
   },
   "horizontal-block-layout-aced320dcc40c60c": {
-    "width-0": 302.4375
+    "width-0": 194
+  },
+  "horizontal-block-layout-a80bf25c0b025d2b": {
+    "width-0": 159,
+    "width-1": 170
+  },
+  "horizontal-block-layout-1c15b011e592056e": {
+    "width-0": 492
   }
 }
