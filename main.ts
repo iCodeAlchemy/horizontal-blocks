@@ -1,56 +1,55 @@
-import { Plugin, MarkdownRenderer } from "obsidian";
+import { Plugin, MarkdownRenderer, MarkdownRenderChild } from "obsidian";
 
-export default class HorizontalBlocksPlugin extends Plugin {
-  private settings: Record<string, any> = {};
-  private styleEl?: HTMLStyleElement;
+class HorizontalBlockRenderer extends MarkdownRenderChild {
+  private plugin: HorizontalBlocksPlugin;
+  private source: string;
+  private sourcePath: string;
+
+  constructor(containerEl: HTMLElement, plugin: HorizontalBlocksPlugin, source: string, sourcePath: string) {
+    super(containerEl);
+    this.plugin = plugin;
+    this.source = source;
+    this.sourcePath = sourcePath;
+  }
 
   async onload() {
-    // Load stored block widths
-    this.settings = (await this.loadData()) || {};
+    const container = this.containerEl;
+    container.className = "horizontal-block-container";
 
-    this.registerMarkdownCodeBlockProcessor("horizontal", async (source, el, ctx) => {
-      const container = document.createElement("div");
-      container.className = "horizontal-block-container";
+    const blockId = await this.plugin.hashString(this.source);
+    const savedLayout = this.plugin.settings[`horizontal-block-layout-${blockId}`] || {};
 
-      const blockId = await this.hashString(source);
-      const savedLayout = this.settings[`horizontal-block-layout-${blockId}`] || {};
+    const sections = this.source.split(/^---$/m).map(part => part.trim());
+    const blocks: HTMLElement[] = [];
 
-      const sections = source.split(/^---$/m).map(part => part.trim());
-      const blocks: HTMLElement[] = [];
+    for (let index = 0; index < sections.length; index++) {
+      const markdown = sections[index];
+      const block = await this.createRenderedBlock(markdown, savedLayout[`title-${index}`]);
+      const savedWidth = savedLayout[`width-${index}`];
 
-      sections.forEach((markdown, index) => {
-        const block = this.createRenderedBlock(markdown, ctx.sourcePath, savedLayout[`title-${index}`]);
-        const savedWidth = savedLayout[`width-${index}`];
-
-        if (savedWidth) {
-          block.classList.add("flex-fixed");
-          this.applyBlockWidth(block, savedWidth);
-        } else {
-          block.classList.add("flex-grow");
-        }
-
-        blocks.push(block);
-      });
-
-      // Append blocks and resizers
-      for (let i = 0; i < blocks.length; i++) {
-        container.appendChild(blocks[i]);
-        if (i < blocks.length - 1) {
-          const resizer = document.createElement("div");
-          resizer.className = "resizer";
-          container.appendChild(resizer);
-          this.makeResizable(blocks[i], blocks[i + 1], resizer, blockId, i);
-        }
+      if (savedWidth) {
+        block.classList.add("horizontal-block-flex-fixed");
+        this.plugin.applyBlockWidth(block, savedWidth);
+      } else {
+        block.classList.add("horizontal-block-flex-grow");
       }
 
-      el.appendChild(container);
-    });
+      blocks.push(block);
+    }
+
+    // Append blocks and resizers
+    for (let i = 0; i < blocks.length; i++) {
+      container.appendChild(blocks[i]);
+      if (i < blocks.length - 1) {
+        const resizer = document.createElement("div");
+        resizer.className = "horizontal-block-resizer";
+        container.appendChild(resizer);
+        this.makeResizable(blocks[i], blocks[i + 1], resizer, blockId, i);
+      }
+    }
   }
 
-  onunload() {
-  }
-
-  createRenderedBlock(markdown: string, sourcePath: string, title?: string): HTMLElement {
+  async createRenderedBlock(markdown: string, title?: string): Promise<HTMLElement> {
     const block = document.createElement("div");
     block.className = "resizable-block";
 
@@ -62,16 +61,16 @@ export default class HorizontalBlocksPlugin extends Plugin {
     }
 
     const preview = document.createElement("div");
-    preview.className = "md-preview";
+    preview.className = "horizontal-block-md-preview";
     preview.classList.add("markdown-rendered");
 
-    MarkdownRenderer.render(this.app, markdown, preview, sourcePath, this).then(() => {
-      const images = preview.querySelectorAll("img");
-      images.forEach((img: HTMLImageElement) => {
-        img.classList.add("horizontal-block-image");
-      });
+    await MarkdownRenderer.render(this.plugin.app, markdown, preview, this.sourcePath, this);
+
+    const images = preview.querySelectorAll("img");
+    images.forEach((img: HTMLImageElement) => {
+      img.classList.add("horizontal-block-image");
     });
-    
+
     block.appendChild(preview);
 
     return block;
@@ -88,31 +87,31 @@ export default class HorizontalBlocksPlugin extends Plugin {
       isResizing = true;
       startX = e.clientX;
       startLeftWidth = left.getBoundingClientRect().width;
-      document.body.classList.add("resizing-cursor");
+      document.body.classList.add("horizontal-block-resizing-cursor");
 
       // Prepare classes for resizing state
-      left.classList.add("flex-fixed");
-      left.classList.remove("flex-grow");
-      right.classList.add("flex-grow");
-      right.classList.remove("flex-fixed");
+      left.classList.add("horizontal-block-flex-fixed");
+      left.classList.remove("horizontal-block-flex-grow");
+      right.classList.add("horizontal-block-flex-grow");
+      right.classList.remove("horizontal-block-flex-fixed");
 
       // Create fresh event handlers for this resize session
       mouseMoveListener = (e: MouseEvent) => {
         if (!isResizing) return;
         const dx = e.clientX - startX;
         const newLeftWidth = startLeftWidth + dx;
-        left.classList.add("flex-fixed");
-        left.classList.remove("flex-grow");
-        this.applyBlockWidth(left, newLeftWidth);
+        left.classList.add("horizontal-block-flex-fixed");
+        left.classList.remove("horizontal-block-flex-grow");
+        this.plugin.applyBlockWidth(left, newLeftWidth);
 
-        right.classList.add("flex-grow");
-        right.classList.remove("flex-fixed");
-        this.removeBlockWidth(right);
+        right.classList.add("horizontal-block-flex-grow");
+        right.classList.remove("horizontal-block-flex-fixed");
+        this.plugin.removeBlockWidth(right);
       };
 
       mouseUpListener = async () => {
         isResizing = false;
-        document.body.classList.remove("resizing-cursor");
+        document.body.classList.remove("horizontal-block-resizing-cursor");
 
         // Clean up event listeners
         if (mouseMoveListener) {
@@ -126,9 +125,9 @@ export default class HorizontalBlocksPlugin extends Plugin {
 
         const finalWidth = left.getBoundingClientRect().width;
         const layoutKey = `horizontal-block-layout-${blockId}`;
-        if (!this.settings[layoutKey]) this.settings[layoutKey] = {};
-        this.settings[layoutKey][`width-${index}`] = finalWidth;
-        await this.saveData(this.settings);
+        if (!this.plugin.settings[layoutKey]) this.plugin.settings[layoutKey] = {};
+        this.plugin.settings[layoutKey][`width-${index}`] = finalWidth;
+        await this.plugin.saveData(this.plugin.settings);
       };
 
       // Add event listeners
@@ -137,6 +136,24 @@ export default class HorizontalBlocksPlugin extends Plugin {
     };
 
     this.registerDomEvent(resizer, "mousedown", mouseDownHandler);
+  }
+}
+
+export default class HorizontalBlocksPlugin extends Plugin {
+  settings: Record<string, any> = {};
+  private styleEl?: HTMLStyleElement;
+
+  async onload() {
+    // Load stored block widths
+    this.settings = (await this.loadData()) || {};
+
+    this.registerMarkdownCodeBlockProcessor("horizontal", async (source, el, ctx) => {
+      const renderer = new HorizontalBlockRenderer(el, this, source, ctx.sourcePath);
+      ctx.addChild(renderer);
+    });
+  }
+
+  onunload() {
   }
 
   async hashString(str: string): Promise<string> {
@@ -148,13 +165,13 @@ export default class HorizontalBlocksPlugin extends Plugin {
       .slice(0, 16); // Shorten for key
   }
 
-  private applyBlockWidth(block: HTMLElement, width: number) {
+  applyBlockWidth(block: HTMLElement, width: number) {
     block.classList.add('has-width');
     // Use inline style with CSS custom property
     block.setAttribute('style', `--block-width: ${Math.round(width)}px`);
   }
 
-  private removeBlockWidth(block: HTMLElement) {
+  removeBlockWidth(block: HTMLElement) {
     block.classList.remove('has-width');
     block.removeAttribute('style');
   }

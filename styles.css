@@ -31,7 +31,7 @@
   user-select: none;
 }
 
-.md-preview {
+.horizontal-block-md-preview {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
@@ -40,7 +40,7 @@
   background-color: var(--background-secondary);
 }
 
-.resizer {
+.horizontal-block-resizer {
   width: 2px;
   background-color: var(--interactive-accent);
   cursor: col-resize;
@@ -54,21 +54,21 @@
   margin: 0 auto;
 }
 
-.flex-grow {
+.horizontal-block-flex-grow {
   flex: 1;
 }
 
-.flex-fixed {
+.horizontal-block-flex-fixed {
   flex: 0 0 auto;
   width: auto;
 }
 
 /* Use CSS custom properties set on the container to control block widths */
-.horizontal-block-container .resizable-block.flex-fixed.has-width {
+.horizontal-block-container .resizable-block.horizontal-block-flex-fixed.has-width {
   width: var(--block-width);
   flex: 0 0 var(--block-width);
 }
 
-.resizing-cursor {
+.horizontal-block-resizing-cursor {
   cursor: col-resize !important;
 }
