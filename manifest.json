@@ -3,7 +3,7 @@
 	"name": "Horizontal Blocks",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Notion-style resizable side-by-side MARKDOWN blocks that support text, images, embeds, and internal links.",
+	"description": "Notion-style resizable side-by-side Markdown blocks that support text, images, embeds, and internal links.",
 	"author": "iCodeAlchemy",
 	"authorUrl": "https://buymeacoffee.com/icodealchemy",
 	"fundingUrl": "https://buymeacoffee.com/icodealchemy",

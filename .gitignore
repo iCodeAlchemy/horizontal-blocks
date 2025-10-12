@@ -41,6 +41,9 @@
 # *.iml
 # *.ipr
 
+# Config Files
+.DS_Store
+
 # CMake
 cmake-build-*/
 
