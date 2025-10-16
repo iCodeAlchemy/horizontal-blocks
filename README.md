@@ -77,11 +77,11 @@ This is a ***formatted*** **text**
 ![img_1.png](images/preview3.png)
 ---
 
-## 🐞 Contributing
+## 🛠️ Feature Requests & Bug Reports
 
-Contributions via bug reports, bug fixes, documentation, and general improvements are always welcome. For more major
-feature work, make an issue about the feature idea / reach out to me so we can judge feasibility and how best to
-implement it.
+Please submit all bug reports and feature requests [via our GitHub Project]([https://github.com/your-repo-url/projects/1](https://github.com/users/iCodeAlchemy/projects/6/views/4)) to help us track and prioritize efficiently.
+
+🙌 Your feedback directly shapes the future of this plugin!
 
 ---
 
