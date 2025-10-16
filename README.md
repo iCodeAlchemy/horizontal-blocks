@@ -79,7 +79,7 @@ This is a ***formatted*** **text**
 
 ## 🛠️ Feature Requests & Bug Reports
 
-Please submit all bug reports and feature requests [via our GitHub Project]([https://github.com/your-repo-url/projects/1](https://github.com/users/iCodeAlchemy/projects/6/views/4)) to help us track and prioritize efficiently.
+Please submit all bug reports and feature requests [via our GitHub Project](https://github.com/users/iCodeAlchemy/projects/6/views/4) to help us track and prioritize efficiently.
 
 🙌 Your feedback directly shapes the future of this plugin!
 
