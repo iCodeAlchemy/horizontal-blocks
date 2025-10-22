@@ -40,6 +40,15 @@
   background-color: var(--background-secondary);
 }
 
+/* Remove default margins from first and last elements in preview */
+.horizontal-block-md-preview > :first-child {
+  margin-top: 0;
+}
+
+.horizontal-block-md-preview > :last-child {
+  margin-bottom: 0;
+}
+
 .horizontal-block-resizer {
   width: 2px;
   background-color: var(--interactive-accent);
@@ -64,11 +73,71 @@
 }
 
 /* Use CSS custom properties set on the container to control block widths */
-.horizontal-block-container .resizable-block.horizontal-block-flex-fixed.has-width {
+.horizontal-block-container
+  .resizable-block.horizontal-block-flex-fixed.has-width {
   width: var(--block-width);
   flex: 0 0 var(--block-width);
 }
 
 .horizontal-block-resizing-cursor {
   cursor: col-resize !important;
+}
+
+.horizontal-blocks-embed-container {
+  width: 100%;
+  display: flex;
+}
+
+.horizontal-blocks-embed {
+  width: 100%;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.horizontal-blocks-embed-view-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.horizontal-blocks-embed .view-header {
+  display: none;
+}
+
+.horizontal-blocks-embed .view-content,
+.horizontal-blocks-embed .markdown-source-view,
+.horizontal-blocks-embed .cm-editor,
+.horizontal-blocks-embed .cm-scroller {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.horizontal-blocks-embed .view-content {
+  padding: 0 var(--file-margins);
+}
+
+.horizontal-blocks-embed .cm-s-obsidian .cm-gutters,
+.horizontal-blocks-embed .cm-s-obsidian .cm-content {
+  padding-top: 0;
+  padding-bottom: 1em;
+}
+
+.horizontal-blocks-embed .inline-title {
+  pointer-events: none;
+  user-select: none;
+  opacity: 1;
+}
+
+.horizontal-blocks-embed-error {
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-modifier-error);
+  color: var(--text-error);
 }
