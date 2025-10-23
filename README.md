@@ -12,10 +12,12 @@ Bring Notion-style layouts with blocks side-by-side, resizable markdown blocks t
 - 🖼️ **Auto-scaling images** inside blocks
 - 💾 **Block width persistence** — remembers layout when you return
 
-> [!WARNING]
-> Please refrain from entering **tasks** directly within the Horizontal code block. 
->
-> The Horizontal function operates based on the code block. In Obsidian, text within a code block is treated as plain text. Consequently, if you input tasks inside a code block, neither the tasks plugin nor the dataview plugin will be able to recognize them.
+```
+⚠️ WARNING
+Please refrain from entering tasks directly within the Horizontal code block. 
+
+The Horizontal function operates based on the code block. In Obsidian, text within a code block is treated as plain text. Consequently, if you input tasks inside a code block, neither the tasks plugin nor the dataview plugin will be able to recognize them.
+```
 
 ---
 
