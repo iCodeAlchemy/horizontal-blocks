@@ -7,7 +7,53 @@ import {
   Editor,
   TFile,
   debounce,
+  PluginSettingTab,
+  Setting,
 } from "obsidian";
+
+type DividerStyle = "solid" | "dashed" | "dotted" | "transparent";
+
+interface StyleSettings {
+  themeAware: boolean;
+  dividerColor: string;
+  dividerThickness: number; // px
+  dividerOpacity: number; // 0..1
+  dividerStyle: DividerStyle;
+
+  blockBgColor: string;
+  alternatingShading: boolean;
+  showBorders: boolean;
+  borderRadius: number; // px
+  borderThickness: number; // px
+
+  blockPadding: number; // px
+  blockGap: number; // px
+  showToolbar: boolean;
+
+  dividerHoverColor: string;
+  dragActiveShadow: string; // color for inner shadow during drag
+}
+
+const DEFAULT_STYLE_SETTINGS: StyleSettings = {
+  themeAware: true,
+  dividerColor: "#6aa9ff",
+  dividerThickness: 2,
+  dividerOpacity: 1,
+  dividerStyle: "solid",
+
+  blockBgColor: "#2b2b2b",
+  alternatingShading: false,
+  showBorders: true,
+  borderRadius: 4,
+  borderThickness: 2,
+
+  blockPadding: 12,
+  blockGap: 0,
+  showToolbar: true,
+
+  dividerHoverColor: "#8bbdff",
+  dragActiveShadow: "rgba(0,0,0,0.08)",
+};
 
 class EditableEmbedChild extends MarkdownRenderChild {
   private plugin: HorizontalBlocksPlugin;
@@ -911,6 +957,7 @@ class HorizontalBlockRenderer extends MarkdownRenderChild {
       startX = e.clientX;
       startLeftWidth = left.getBoundingClientRect().width;
       document.body.classList.add("horizontal-block-resizing-cursor");
+      document.body.classList.add("hblock-drag-active");
 
       // Prepare classes for resizing state
       left.classList.add("horizontal-block-flex-fixed");
@@ -935,6 +982,7 @@ class HorizontalBlockRenderer extends MarkdownRenderChild {
       mouseUpListener = async () => {
         isResizing = false;
         document.body.classList.remove("horizontal-block-resizing-cursor");
+        document.body.classList.remove("hblock-drag-active");
 
         // Clean up event listeners
         if (mouseMoveListener) {
@@ -967,12 +1015,21 @@ export default class HorizontalBlocksPlugin extends Plugin {
   settings: Record<string, any> = {};
   private styleEl?: HTMLStyleElement;
   embedManager!: EditableEmbedManager;
+  style: StyleSettings = { ...DEFAULT_STYLE_SETTINGS };
 
   async onload() {
     // Load stored block widths
     this.settings = (await this.loadData()) || {};
+    // Load style settings (nested under key to avoid colliding with layout entries)
+    this.style = {
+      ...DEFAULT_STYLE_SETTINGS,
+      ...(this.settings.style || {}),
+    };
 
     this.embedManager = new EditableEmbedManager(this);
+
+    // Apply initial styling variables
+    this.applyStylingVariables();
 
     // Register the processor function
     const processor = async (source: string, el: HTMLElement, ctx: any) => {
@@ -988,6 +1045,9 @@ export default class HorizontalBlocksPlugin extends Plugin {
     // Register for both "horizontal" and "hblock" triggers
     this.registerMarkdownCodeBlockProcessor("horizontal", processor);
     this.registerMarkdownCodeBlockProcessor("hblock", processor);
+
+    // Settings tab
+    this.addSettingTab(new HBlockStylingSettingTab(this.app, this));
   }
 
   onunload() {
@@ -1012,5 +1072,278 @@ export default class HorizontalBlocksPlugin extends Plugin {
   removeBlockWidth(block: HTMLElement) {
     block.classList.remove("has-width");
     block.removeAttribute("style");
+  }
+
+  async saveStyle() {
+    this.settings.style = this.style;
+    await this.saveData(this.settings);
+  }
+
+  applyStylingVariables() {
+    const el = (this.styleEl ||= document.createElement("style"));
+    el.setAttribute("data-hblocks-style", "true");
+    if (!el.parentElement) document.head.appendChild(el);
+
+    // Toggle global classes
+    document.body.classList.toggle("hblocks-no-borders", !this.style.showBorders);
+    document.body.classList.toggle(
+      "hblocks-alt-shading",
+      !!this.style.alternatingShading
+    );
+    document.body.classList.toggle(
+      "hblocks-toolbar-hidden",
+      !this.style.showToolbar
+    );
+
+    const s = this.style;
+    const dividerColor = s.themeAware ? "var(--interactive-accent)" : s.dividerColor;
+    const hoverColor = s.themeAware ? "var(--text-accent)" : s.dividerHoverColor;
+    const blockBg = s.themeAware ? "var(--background-secondary)" : s.blockBgColor;
+
+    // Compute alt shading color (slightly darken by 6%)
+    const altBg = this.mixColor(blockBg, "#000000", 0.06);
+
+    el.textContent = `
+      :root {
+        --hblock-divider-color: ${dividerColor};
+        --hblock-divider-thickness: ${Math.max(1, Math.min(5, s.dividerThickness))}px;
+        --hblock-divider-opacity: ${Math.max(0, Math.min(1, s.dividerOpacity))};
+        --hblock-divider-style: ${s.dividerStyle};
+
+        --hblock-block-bg: ${blockBg};
+        --hblock-border-radius: ${Math.max(0, s.borderRadius)}px;
+        --hblock-border-thickness: ${Math.max(0, s.borderThickness)}px;
+
+        --hblock-block-padding: ${Math.max(0, s.blockPadding)}px;
+        --hblock-gap-size: ${Math.max(0, s.blockGap)}px;
+
+        --hblock-divider-hover-color: ${hoverColor};
+        --hblock-drag-active-shadow: ${s.dragActiveShadow};
+      }
+      .hblocks-alt-shading .horizontal-block-container .resizable-block:nth-of-type(odd) {
+        background-color: ${altBg};
+      }
+    `;
+  }
+
+  private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+    const match = hex.replace('#', '').match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!match) return null;
+    let h = match[1].toLowerCase();
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const num = parseInt(h, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
+  private mixColor(c1: string, c2: string, ratio: number): string {
+    // If using theme var, return as-is to avoid mixing
+    if (c1.includes('var(') || c2.includes('var(')) return c1;
+    const a = this.hexToRgb(c1);
+    const b = this.hexToRgb(c2);
+    if (!a || !b) return c1;
+    const r = Math.round(a.r * (1 - ratio) + b.r * ratio);
+    const g = Math.round(a.g * (1 - ratio) + b.g * ratio);
+    const bl = Math.round(a.b * (1 - ratio) + b.b * ratio);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + bl).toString(16).slice(1)}`;
+  }
+}
+
+class HBlockStylingSettingTab extends PluginSettingTab {
+  plugin: HorizontalBlocksPlugin;
+  constructor(app: any, plugin: HorizontalBlocksPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.createEl("h2", { text: "Horizontal Blocks – Styling" });
+
+    // Theme-aware toggle
+    new Setting(containerEl)
+      .setName("Theme-aware colors")
+      .setDesc("Use theme colors instead of custom picks.")
+      .addToggle((t) =>
+        t.setValue(this.plugin.style.themeAware).onChange(async (v) => {
+          this.plugin.style.themeAware = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+          this.display();
+        })
+      );
+
+    containerEl.createEl("h3", { text: "Divider" });
+    new Setting(containerEl)
+      .setName("Color")
+      .setDesc("Resizer divider color")
+      .addColorPicker((p) =>
+        p
+          .setValue(this.plugin.style.dividerColor)
+          .onChange(async (v) => {
+            this.plugin.style.dividerColor = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+          .setDisabled(this.plugin.style.themeAware)
+      );
+    new Setting(containerEl)
+      .setName("Thickness")
+      .setDesc("Divider thickness (px)")
+      .addSlider((s) =>
+        s
+          .setLimits(1, 5, 1)
+          .setValue(this.plugin.style.dividerThickness)
+          .onChange(async (v) => {
+            this.plugin.style.dividerThickness = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+    new Setting(containerEl)
+      .setName("Opacity")
+      .setDesc("Divider opacity")
+      .addSlider((s) =>
+        s
+          .setLimits(0, 100, 5)
+          .setValue(Math.round(this.plugin.style.dividerOpacity * 100))
+          .onChange(async (v) => {
+            this.plugin.style.dividerOpacity = v / 100;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+    new Setting(containerEl)
+      .setName("Style")
+      .setDesc("Divider line style")
+      .addDropdown((d) =>
+        d
+          .addOptions({ solid: "Solid", dashed: "Dashed", dotted: "Dotted", transparent: "Transparent" })
+          .setValue(this.plugin.style.dividerStyle)
+          .onChange(async (v) => {
+            this.plugin.style.dividerStyle = v as DividerStyle;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+
+    containerEl.createEl("h3", { text: "Blocks" });
+    new Setting(containerEl)
+      .setName("Background color")
+      .setDesc("Default background for blocks")
+      .addColorPicker((p) =>
+        p
+          .setValue(this.plugin.style.blockBgColor)
+          .onChange(async (v) => {
+            this.plugin.style.blockBgColor = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+          .setDisabled(this.plugin.style.themeAware)
+      );
+    new Setting(containerEl)
+      .setName("Alternating shading")
+      .setDesc("Zebra-style subtle alternating backgrounds")
+      .addToggle((t) =>
+        t.setValue(this.plugin.style.alternatingShading).onChange(async (v) => {
+          this.plugin.style.alternatingShading = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+        })
+      );
+    new Setting(containerEl)
+      .setName("Show borders")
+      .addToggle((t) =>
+        t.setValue(this.plugin.style.showBorders).onChange(async (v) => {
+          this.plugin.style.showBorders = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+        })
+      );
+    new Setting(containerEl)
+      .setName("Border radius")
+      .addSlider((s) =>
+        s
+          .setLimits(0, 24, 1)
+          .setValue(this.plugin.style.borderRadius)
+          .onChange(async (v) => {
+            this.plugin.style.borderRadius = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+    new Setting(containerEl)
+      .setName("Border thickness")
+      .addSlider((s) =>
+        s
+          .setLimits(0, 8, 1)
+          .setValue(this.plugin.style.borderThickness)
+          .onChange(async (v) => {
+            this.plugin.style.borderThickness = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+
+    containerEl.createEl("h3", { text: "Spacing & Density" });
+    new Setting(containerEl)
+      .setName("Inner padding")
+      .setDesc("Padding inside each block (px)")
+      .addSlider((s) =>
+        s
+          .setLimits(0, 32, 1)
+          .setValue(this.plugin.style.blockPadding)
+          .onChange(async (v) => {
+            this.plugin.style.blockPadding = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+    new Setting(containerEl)
+      .setName("Gap between blocks")
+      .addSlider((s) =>
+        s
+          .setLimits(0, 24, 1)
+          .setValue(this.plugin.style.blockGap)
+          .onChange(async (v) => {
+            this.plugin.style.blockGap = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+      );
+    new Setting(containerEl)
+      .setName("Toolbar visibility")
+      .setDesc("Hide/show toolbar region (if present)")
+      .addToggle((t) =>
+        t.setValue(this.plugin.style.showToolbar).onChange(async (v) => {
+          this.plugin.style.showToolbar = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+        })
+      );
+
+    containerEl.createEl("h3", { text: "Preview Style Accents" });
+    new Setting(containerEl)
+      .setName("Divider hover accent")
+      .addColorPicker((p) =>
+        p
+          .setValue(this.plugin.style.dividerHoverColor)
+          .onChange(async (v) => {
+            this.plugin.style.dividerHoverColor = v;
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+          })
+          .setDisabled(this.plugin.style.themeAware)
+      );
+    new Setting(containerEl)
+      .setName("Drag active highlight")
+      .setDesc("Inner shadow color during resizing")
+      .addColorPicker((p) =>
+        p.setValue(this.plugin.style.dragActiveShadow).onChange(async (v) => {
+          this.plugin.style.dragActiveShadow = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+        })
+      );
   }
 }

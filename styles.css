@@ -3,7 +3,7 @@
   width: 100%;
   min-height: 50px;
   border-radius: 6px;
-  gap: 0; /* handled by resizer */
+  gap: var(--hblock-gap-size, 0px);
   margin-top: 0rem;
   overflow: hidden;
   box-shadow: var(--shadow-s);
@@ -14,10 +14,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 2px solid var(--background-secondary);
-  border-radius: 4px;
+  border: var(--hblock-border-thickness, 2px) solid var(--background-modifier-border);
+  border-radius: var(--hblock-border-radius, 4px);
   margin: 0 2px;
-  background-color: var(--background-secondary);
+  background-color: var(--hblock-block-bg, var(--background-secondary));
 }
 
 .block-title {
@@ -34,10 +34,10 @@
 .horizontal-block-md-preview {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: var(--hblock-block-padding, 12px);
   font-size: 0.9rem;
   line-height: 1.5;
-  background-color: var(--background-secondary);
+  background-color: transparent;
 }
 
 /* Remove default margins from first and last elements in preview */
@@ -50,10 +50,17 @@
 }
 
 .horizontal-block-resizer {
-  width: 2px;
-  background-color: var(--interactive-accent);
+  width: var(--hblock-divider-thickness, 2px);
+  background-color: transparent;
+  border-left: var(--hblock-divider-thickness, 2px) var(--hblock-divider-style, solid)
+    var(--hblock-divider-color, var(--interactive-accent));
+  opacity: var(--hblock-divider-opacity, 1);
   cursor: col-resize;
   user-select: none;
+}
+
+.horizontal-block-resizer:hover {
+  border-color: var(--hblock-divider-hover-color, var(--interactive-accent));
 }
 
 .horizontal-block-image {
@@ -81,6 +88,11 @@
 
 .horizontal-block-resizing-cursor {
   cursor: col-resize !important;
+}
+
+/* Drag active highlight */
+.hblock-drag-active .horizontal-block-resizer {
+  box-shadow: inset 0 0 0 2px var(--hblock-drag-active-shadow, transparent);
 }
 
 .horizontal-blocks-embed-container {
@@ -148,6 +160,21 @@
   max-height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+}
+
+/* Optional alternating shading (zebra) */
+.hblocks-alt-shading .horizontal-block-container .resizable-block:nth-of-type(odd) {
+  /* background color optionally overridden via injected style */
+}
+
+/* Hide optional toolbar stubs if present */
+.hblocks-toolbar-hidden .horizontal-block-container .hblock-toolbar {
+  display: none !important;
+}
+
+/* Hide borders globally when toggled */
+.hblocks-no-borders .horizontal-block-container .resizable-block {
+  border: 0 !important;
 }
 
 .horizontal-blocks-embed .view-content {
