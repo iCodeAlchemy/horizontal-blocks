@@ -10,6 +10,7 @@ import {
   PluginSettingTab,
   Setting,
   Menu,
+  Notice,
 } from "obsidian";
 
 type DividerStyle = "solid" | "dashed" | "dotted" | "transparent";
@@ -48,13 +49,13 @@ const DEFAULT_STYLE_SETTINGS: StyleSettings = {
   blockTextColor: "#e0e0e0",
   titleTextColor: "#7aa2ff",
   alternatingShading: false,
-  showBorders: true,
+  showBorders: false,
   borderRadius: 4,
   borderThickness: 2,
 
   blockPadding: 12,
   blockGap: 0,
-  showToolbar: true,
+  showToolbar: false,
 
   dividerHoverColor: "#8bbdff",
   dragActiveShadow: "rgba(0,0,0,0.08)",
@@ -1332,7 +1333,7 @@ class HBlockStylingSettingTab extends PluginSettingTab {
     // Theme-aware toggle
     new Setting(containerEl)
       .setName("Theme-aware colors")
-      .setDesc("Use theme colors instead of custom picks.")
+      .setDesc("Use theme colors instead of custom picks. Disabling this option will enable color selection in below sections.")
       .addToggle((t) =>
         t.setValue(this.plugin.style.themeAware).onChange(async (v) => {
           this.plugin.style.themeAware = v;
@@ -1536,6 +1537,45 @@ class HBlockStylingSettingTab extends PluginSettingTab {
           await this.plugin.saveStyle();
           this.plugin.applyStylingVariables();
         })
+      );
+
+    // Reset to defaults section
+    containerEl.createEl("h3", { text: "Reset" });
+    new Setting(containerEl)
+      .setName("Reset styling to defaults")
+      .setDesc("Restores all styling options to their default values.")
+      .addButton((btn) =>
+        btn
+          .setButtonText("Reset to defaults")
+          .setWarning()
+          .onClick(async () => {
+            const confirmed = confirm(
+              "Reset divider and block styling to defaults (keeps widths)?"
+            );
+            if (!confirmed) return;
+
+            // 1) Reset global style settings
+            this.plugin.style = { ...DEFAULT_STYLE_SETTINGS };
+
+            // 2) Remove per-block style overrides (bg/fg) but keep widths
+            for (const key of Object.keys(this.plugin.settings)) {
+              if (!key.startsWith("horizontal-block-layout-")) continue;
+              const layout = this.plugin.settings[key];
+              if (layout && typeof layout === "object") {
+                for (const prop of Object.keys(layout)) {
+                  if (prop.startsWith("bg-") || prop.startsWith("fg-")) {
+                    delete layout[prop];
+                  }
+                }
+              }
+            }
+
+            // Persist settings and reapply styles
+            await this.plugin.saveStyle();
+            this.plugin.applyStylingVariables();
+            new Notice("Horizontal Blocks styling reset (widths preserved).");
+            this.display();
+          })
       );
   }
 }
