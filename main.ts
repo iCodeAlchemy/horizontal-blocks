@@ -7,61 +7,17 @@ import {
   Editor,
   TFile,
   debounce,
-  PluginSettingTab,
-  Setting,
   Menu,
   Notice,
 } from "obsidian";
-
-type DividerStyle = "solid" | "dashed" | "dotted" | "transparent";
-
-interface StyleSettings {
-  themeAware: boolean;
-  dividerColor: string;
-  dividerThickness: number; // px
-  dividerOpacity: number; // 0..1
-  dividerStyle: DividerStyle;
-
-  blockBgColor: string;
-  blockTextColor: string;
-  titleTextColor: string;
-  alternatingShading: boolean;
-  showBorders: boolean;
-  borderRadius: number; // px
-  borderThickness: number; // px
-  transparentBackground: boolean;
-
-  blockPadding: number; // px
-  blockGap: number; // px
-  showToolbar: boolean;
-
-  dividerHoverColor: string;
-  dragActiveShadow: string; // color for inner shadow during drag
-}
-
-const DEFAULT_STYLE_SETTINGS: StyleSettings = {
-  themeAware: true,
-  dividerColor: "#6aa9ff",
-  dividerThickness: 2,
-  dividerOpacity: 1,
-  dividerStyle: "solid",
-
-  blockBgColor: "#2b2b2b",
-  blockTextColor: "#e0e0e0",
-  titleTextColor: "#7aa2ff",
-  alternatingShading: false,
-  showBorders: false,
-  borderRadius: 4,
-  borderThickness: 2,
-  transparentBackground: false,
-
-  blockPadding: 12,
-  blockGap: 0,
-  showToolbar: false,
-
-  dividerHoverColor: "#8bbdff",
-  dragActiveShadow: "rgba(0,0,0,0.08)",
-};
+import { isVersionNewerThanOther } from "./src/utils";
+import { ReleaseNotes } from "./src/dialogs/ReleaseNotes";
+import {
+  DividerStyle,
+  StyleSettings,
+  DEFAULT_STYLE_SETTINGS,
+  HBlockStylingSettingTab,
+} from "./src/settings";
 
 class EditableEmbedChild extends MarkdownRenderChild {
   private plugin: HorizontalBlocksPlugin;
@@ -1200,6 +1156,8 @@ class HorizontalBlockRenderer extends MarkdownRenderChild {
   }
 }
 
+// ---------------------------------------------------------------------------
+
 export default class HorizontalBlocksPlugin extends Plugin {
   settings: Record<string, any> = {};
   private styleEl?: HTMLStyleElement;
@@ -1237,6 +1195,33 @@ export default class HorizontalBlocksPlugin extends Plugin {
 
     // Settings tab
     this.addSettingTab(new HBlockStylingSettingTab(this.app, this));
+
+    // ── Upgrade / first-run popup ────────────────────────────────────────────
+    // Mirrors the Excalidraw plugin pattern exactly:
+    //   • showReleaseNotes is user-toggleable (defaults true)
+    //   • previousRelease "0.0.0" or missing → brand-new install → show welcome
+    //   • semantic version comparison catches multi-version upgrades
+    //   • previousRelease is saved in onClose(), not here
+    if (this.settings.showReleaseNotes !== false) {
+      const currentVersion = this.manifest.version;
+      const previousRelease = (this.settings.previousRelease as string | undefined) ?? "0.0.0";
+      const isFirstInstall = previousRelease === "0.0.0" || !previousRelease;
+
+      if (isVersionNewerThanOther(currentVersion, previousRelease)) {
+        this.app.workspace.onLayoutReady(() => {
+          try {
+            new ReleaseNotes(
+              this.app,
+              this,
+              isFirstInstall ? null : currentVersion,
+            ).open();
+          } catch (e) {
+            new Notice("Error opening release notes", 6000);
+            console.error("Horizontal Blocks: error opening release notes", e);
+          }
+        });
+      }
+    }
   }
 
   onunload() {
@@ -1362,274 +1347,3 @@ export default class HorizontalBlocksPlugin extends Plugin {
   }
 }
 
-class HBlockStylingSettingTab extends PluginSettingTab {
-  plugin: HorizontalBlocksPlugin;
-  constructor(app: any, plugin: HorizontalBlocksPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    containerEl.createEl("h2", { text: "Horizontal Blocks – Styling" });
-
-    // Theme-aware toggle
-    new Setting(containerEl)
-      .setName("Theme-aware colors")
-      .setDesc("Use theme colors instead of custom picks. Disabling this option will enable color selection in below sections.")
-      .addToggle((t) =>
-        t.setValue(this.plugin.style.themeAware).onChange(async (v) => {
-          this.plugin.style.themeAware = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-          this.display();
-        })
-      );
-
-    containerEl.createEl("h3", { text: "Divider" });
-    new Setting(containerEl)
-      .setName("Color")
-      .setDesc("Resizer divider color")
-      .addColorPicker((p) =>
-        p
-          .setValue(this.plugin.style.dividerColor)
-          .onChange(async (v) => {
-            this.plugin.style.dividerColor = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-          .setDisabled(this.plugin.style.themeAware)
-      );
-    new Setting(containerEl)
-      .setName("Thickness")
-      .setDesc("Divider thickness (px)")
-      .addSlider((s) =>
-        s
-          .setLimits(1, 5, 1)
-          .setValue(this.plugin.style.dividerThickness)
-          .onChange(async (v) => {
-            this.plugin.style.dividerThickness = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-      );
-    new Setting(containerEl)
-      .setName("Opacity")
-      .setDesc("Divider opacity")
-      .addSlider((s) =>
-        s
-          .setLimits(0, 100, 5)
-          .setValue(Math.round(this.plugin.style.dividerOpacity * 100))
-          .onChange(async (v) => {
-            this.plugin.style.dividerOpacity = v / 100;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-      );
-    new Setting(containerEl)
-      .setName("Style")
-      .setDesc("Divider line style")
-      .addDropdown((d) =>
-        d
-          .addOptions({
-            solid: "Solid",
-            dashed: "Dashed",
-            dotted: "Dotted",
-            transparent: "Transparent",
-          })
-          .setValue(this.plugin.style.dividerStyle)
-          .onChange(async (v) => {
-            this.plugin.style.dividerStyle = v as DividerStyle;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-      );
-
-    containerEl.createEl("h3", { text: "Blocks" });
-    new Setting(containerEl)
-      .setName("Background color")
-      .setDesc("Default background for blocks")
-      .addColorPicker((p) =>
-        p
-          .setValue(this.plugin.style.blockBgColor)
-          .onChange(async (v) => {
-            this.plugin.style.blockBgColor = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-          .setDisabled(this.plugin.style.themeAware)
-      );
-    new Setting(containerEl)
-      .setName("Text color")
-      .setDesc("Default text color for blocks")
-      .addColorPicker((p) =>
-        p
-          .setValue(this.plugin.style.blockTextColor)
-          .onChange(async (v) => {
-            this.plugin.style.blockTextColor = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-          .setDisabled(this.plugin.style.themeAware)
-      );
-    new Setting(containerEl)
-      .setName("Title text color")
-      .setDesc("Default color for block titles")
-      .addColorPicker((p) =>
-        p
-          .setValue(this.plugin.style.titleTextColor)
-          .onChange(async (v) => {
-            this.plugin.style.titleTextColor = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-          .setDisabled(this.plugin.style.themeAware)
-      );
-    new Setting(containerEl)
-      .setName("Alternating shading")
-      .setDesc("Zebra-style subtle alternating backgrounds")
-      .addToggle((t) =>
-        t.setValue(this.plugin.style.alternatingShading).onChange(async (v) => {
-          this.plugin.style.alternatingShading = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-      );
-    new Setting(containerEl).setName("Show borders").addToggle((t) =>
-      t.setValue(this.plugin.style.showBorders).onChange(async (v) => {
-        this.plugin.style.showBorders = v;
-        await this.plugin.saveStyle();
-        this.plugin.applyStylingVariables();
-      })
-    );
-    new Setting(containerEl).setName("Border radius").addSlider((s) =>
-      s
-        .setLimits(0, 24, 1)
-        .setValue(this.plugin.style.borderRadius)
-        .onChange(async (v) => {
-          this.plugin.style.borderRadius = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-    );
-    new Setting(containerEl).setName("Border thickness").addSlider((s) =>
-      s
-        .setLimits(0, 8, 1)
-        .setValue(this.plugin.style.borderThickness)
-        .onChange(async (v) => {
-          this.plugin.style.borderThickness = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-    );
-    new Setting(containerEl)
-      .setName("Transparent background")
-      .setDesc("Make block backgrounds transparent")
-      .addToggle((t) =>
-        t.setValue(this.plugin.style.transparentBackground).onChange(async (v) => {
-          this.plugin.style.transparentBackground = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-      );
-
-    containerEl.createEl("h3", { text: "Spacing & Density" });
-    new Setting(containerEl)
-      .setName("Inner padding")
-      .setDesc("Padding inside each block (px)")
-      .addSlider((s) =>
-        s
-          .setLimits(0, 32, 1)
-          .setValue(this.plugin.style.blockPadding)
-          .onChange(async (v) => {
-            this.plugin.style.blockPadding = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-      );
-    new Setting(containerEl).setName("Gap between blocks").addSlider((s) =>
-      s
-        .setLimits(0, 24, 1)
-        .setValue(this.plugin.style.blockGap)
-        .onChange(async (v) => {
-          this.plugin.style.blockGap = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-    );
-    new Setting(containerEl)
-      .setName("Toolbar visibility")
-      .setDesc("Hide/show toolbar region (if present)")
-      .addToggle((t) =>
-        t.setValue(this.plugin.style.showToolbar).onChange(async (v) => {
-          this.plugin.style.showToolbar = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-      );
-
-    containerEl.createEl("h3", { text: "Preview Style Accents" });
-    new Setting(containerEl)
-      .setName("Divider hover accent")
-      .addColorPicker((p) =>
-        p
-          .setValue(this.plugin.style.dividerHoverColor)
-          .onChange(async (v) => {
-            this.plugin.style.dividerHoverColor = v;
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-          })
-          .setDisabled(this.plugin.style.themeAware)
-      );
-    new Setting(containerEl)
-      .setName("Drag active highlight")
-      .setDesc("Inner shadow color during resizing")
-      .addColorPicker((p) =>
-        p.setValue(this.plugin.style.dragActiveShadow).onChange(async (v) => {
-          this.plugin.style.dragActiveShadow = v;
-          await this.plugin.saveStyle();
-          this.plugin.applyStylingVariables();
-        })
-      );
-
-    // Reset to defaults section
-    containerEl.createEl("h3", { text: "Reset" });
-    new Setting(containerEl)
-      .setName("Reset styling to defaults")
-      .setDesc("Restores all styling options to their default values.")
-      .addButton((btn) =>
-        btn
-          .setButtonText("Reset to defaults")
-          .setWarning()
-          .onClick(async () => {
-            const confirmed = confirm(
-              "Reset divider and block styling to defaults (keeps widths)?"
-            );
-            if (!confirmed) return;
-
-            // 1) Reset global style settings
-            this.plugin.style = { ...DEFAULT_STYLE_SETTINGS };
-
-            // 2) Remove per-block style overrides (bg/fg) but keep widths
-            for (const key of Object.keys(this.plugin.settings)) {
-              if (!key.startsWith("horizontal-block-layout-")) continue;
-              const layout = this.plugin.settings[key];
-              if (layout && typeof layout === "object") {
-                for (const prop of Object.keys(layout)) {
-                  if (prop.startsWith("bg-") || prop.startsWith("fg-")) {
-                    delete layout[prop];
-                  }
-                }
-              }
-            }
-
-            // Persist settings and reapply styles
-            await this.plugin.saveStyle();
-            this.plugin.applyStylingVariables();
-            new Notice("Horizontal Blocks styling reset (widths preserved).");
-            this.display();
-          })
-      );
-  }
-}

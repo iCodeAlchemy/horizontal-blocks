@@ -8,30 +8,24 @@ Bring Notion-style layouts with blocks side-by-side, resizable markdown blocks t
 
 ## ✨ Features
 
-- 🔲 **Side-by-side markdown blocks** using `horizontal` code block
+- 🔲 **Side-by-side markdown blocks** using `horizontal` / `hblock` code block
 - 📏 **Resizable columns** with a draggable divider
 - 🧠 **Dynamic layout** — support for 2 or more columns using `---` separator
 - 🖼️ **Auto-scaling images** inside blocks
 - 💾 **Block width persistence** — remembers layout when you return
-
-```
-⚠️ WARNING
-Please refrain from entering tasks directly within the Horizontal code block. 
-
-The Horizontal function operates based on the code block. In Obsidian, text within a code block is treated as plain text. Consequently, if you input tasks inside a code block, neither the tasks plugin nor the dataview plugin will be able to recognize them.
-```
-
----
-
-## 🔔 What's New
-
-- New trigger alias `hblock` for the horizontal layout code block.
 - Live editing for page/section embeds within blocks, with reduced extra spacing for a cleaner look.
 - Styling settings tab: tweak divider (color, thickness, opacity, style), block backgrounds/borders, padding and gaps, toolbar visibility, and theme-aware colors — all applied live via CSS variables.
   - Also includes text color option for block content.
   - Title text color for block headers.
 - Per-block toolbar inside each column: width +/- controls, and per-block background/text color pickers with instant updates and persistence.
   - Right-click any block for quick visibility toggles (toolbar, borders, alternating shading).
+
+```
+⚠️ WARNING
+Please refrain from entering tasks directly within the Horizontal code block.
+
+The Horizontal function operates based on the code block. In Obsidian, text within a code block is treated as plain text. Consequently, if you input tasks inside a code block, neither the tasks plugin nor the dataview plugin will be able to recognize them.
+```
 
 ---
 
@@ -51,10 +45,10 @@ This is the right block.
 
 ### Preview 1:
 
-![img.png](images/preview1.png)
----
+## ![img.png](images/preview1.png)
 
 ### Code 2:
+
 <pre>
 ```horizontal  
 ### Left Block  
@@ -70,9 +64,10 @@ This is the right block.
 
 ### Preview 2:
 
-![img.png](images/preview2.png)
----
+## ![img.png](images/preview2.png)
+
 ### Code 3:
+
  <pre>
 ```hblock
 ### Left Block
@@ -90,8 +85,7 @@ This is a ***formatted*** **text**
 
 ### Preview 3:
 
-![img_1.png](images/preview3.png)
----
+## ![img_1.png](images/preview3.png)
 
 ## 🎨 Styling Settings
 
@@ -112,11 +106,11 @@ All options apply via CSS variables/classes, so themes/snippets can override the
 <!-- ### Screenshots
 
 - Styling panel overview:
-  
+
   <img alt="Horizontal Blocks – Styling settings" src="images/styling-settings.png" width="800" />
 
 - Live resizing and hover accents:
-  
+
   <img alt="Divider hover and drag highlight" src="images/styling-live-demo.gif" width="800" /> -->
 
 ### Toolbar Controls
@@ -133,11 +127,47 @@ See the full release history in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## 🛠️ Feature Requests & Bug Reports
+## 🤝 Contributing
 
-Please submit all bug reports and feature requests [via our GitHub Project](https://github.com/users/iCodeAlchemy/projects/6/views/4) to help us track and prioritize efficiently.
+Contributions are welcome! Whether it's a bug fix, a new feature, or a UI improvement — here's how to get involved.
 
-🙌 Your feedback directly shapes the future of this plugin!
+### Getting Started
+
+1. **Fork** the repository and clone your fork locally.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Start the dev build** (watches for changes):
+   ```bash
+   npm run dev
+   ```
+4. **Link to your Obsidian vault for testing** — copy `main.js`, `manifest.json`, and `styles.css` into your vault's plugin folder:
+   ```
+   <vault>/.obsidian/plugins/horizontal-blocks/
+   ```
+   Reload Obsidian or use the **Reload App Without Saving** command to pick up changes.
+
+### Submitting a Pull Request
+
+1. Create a focused branch for your change:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+2. Keep commits atomic and write clear commit messages (e.g. `fix: correct font size in block content`).
+3. Make sure `npm run build` passes without TypeScript errors before opening a PR.
+4. Open your PR against the `main` branch. Include a clear description of _what_ changed and _why_.
+5. Reference any related issues in the PR description (e.g. `Closes #12`).
+
+### Code Style Guidelines
+
+- This project is written in **TypeScript**. Keep type annotations explicit.
+- Follow the existing patterns for `StyleSettings` when adding new styling options — add the field to the interface, set a default in `DEFAULT_STYLE_SETTINGS`, wire it up in `applyStylingVariables()`, and add a toggle/picker in `HBlockStylingSettingTab`.
+- Avoid hardcoding paths, user-specific directories, or environment-dependent commands in `package.json` scripts.
+
+### Reporting Bugs & Requesting Features
+
+Please use our [GitHub Project board](https://github.com/users/iCodeAlchemy/projects/6/views/4) to submit bug reports and feature requests. It helps us triage and prioritize efficiently.
 
 ---
 
@@ -148,5 +178,3 @@ Have you found the **Horizontal Blocks** plugin helpful, and want to support it?
 Support @iCodeAlchemy:
 
 <a href="https://www.buymeacoffee.com/iCodeAlchemy" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 175px !important;" ></a>
-
-
