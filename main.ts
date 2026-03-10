@@ -29,6 +29,7 @@ interface StyleSettings {
   showBorders: boolean;
   borderRadius: number; // px
   borderThickness: number; // px
+  transparentBackground: boolean;
 
   blockPadding: number; // px
   blockGap: number; // px
@@ -52,6 +53,7 @@ const DEFAULT_STYLE_SETTINGS: StyleSettings = {
   showBorders: false,
   borderRadius: 4,
   borderThickness: 2,
+  transparentBackground: false,
 
   blockPadding: 12,
   blockGap: 0,
@@ -1295,7 +1297,9 @@ export default class HorizontalBlocksPlugin extends Plugin {
     const hoverColor = s.themeAware
       ? "var(--text-accent)"
       : s.dividerHoverColor;
-    const blockBg = s.themeAware
+    const blockBg = s.transparentBackground
+      ? "transparent"
+      : s.themeAware
       ? "var(--background-secondary)"
       : s.blockBgColor;
     const textColor = s.themeAware ? "var(--text-normal)" : s.blockTextColor;
@@ -1519,6 +1523,16 @@ class HBlockStylingSettingTab extends PluginSettingTab {
           this.plugin.applyStylingVariables();
         })
     );
+    new Setting(containerEl)
+      .setName("Transparent background")
+      .setDesc("Make block backgrounds transparent")
+      .addToggle((t) =>
+        t.setValue(this.plugin.style.transparentBackground).onChange(async (v) => {
+          this.plugin.style.transparentBackground = v;
+          await this.plugin.saveStyle();
+          this.plugin.applyStylingVariables();
+        })
+      );
 
     containerEl.createEl("h3", { text: "Spacing & Density" });
     new Setting(containerEl)

@@ -36,7 +36,7 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--hblock-block-padding, 12px);
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1.5;
   background-color: transparent;
   color: var(--hblock-text-color, inherit);
