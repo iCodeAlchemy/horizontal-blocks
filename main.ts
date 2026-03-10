@@ -826,7 +826,7 @@ class HorizontalBlockRenderer extends MarkdownRenderChild {
     const savedLayout =
       this.plugin.settings[`horizontal-block-layout-${blockId}`] || {};
 
-    const sections = this.source.split(/^---$/m).map((part) => part.trim());
+    const sections = this.splitSections(this.source);
     const blocks: HTMLElement[] = [];
 
     for (let index = 0; index < sections.length; index++) {
@@ -875,6 +875,46 @@ class HorizontalBlockRenderer extends MarkdownRenderChild {
     for (let i = 0; i < blocks.length; i++) {
       this.attachToolbar(container, blocks, blockId, i);
     }
+  }
+
+  private splitSections(source: string): string[] {
+    const lines = source.split(/\r?\n/);
+    const sections: string[] = [];
+    const codeBlockRegex = /^\s*(`{3,}|~{3,})(.*)$/;
+
+    let currentSection: string[] = [];
+    let codeBlockMarker: { marker: string; length: number } | null = null;
+
+    for (const line of lines) {
+      const fenceMatch = line.match(codeBlockRegex);
+
+      if (!codeBlockMarker && fenceMatch) {
+        codeBlockMarker = {
+          marker: fenceMatch[1][0],
+          length: fenceMatch[1].length,
+        };
+      } else if (
+        codeBlockMarker &&
+        fenceMatch &&
+        fenceMatch[1][0] === codeBlockMarker.marker &&
+        fenceMatch[1].length >= codeBlockMarker.length
+      ) {
+        codeBlockMarker = null;
+      }
+
+      if (!codeBlockMarker && line.trim() === "---") {
+        sections.push(currentSection.join("\n").trim());
+        currentSection = [];
+        continue;
+      }
+
+      currentSection.push(line);
+    }
+
+    sections.push(currentSection.join("\n").trim());
+    currentSection = [];
+
+    return sections;
   }
 
   async createRenderedBlock(
