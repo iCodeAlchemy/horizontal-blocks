@@ -1213,7 +1213,8 @@ export default class HorizontalBlocksPlugin extends Plugin {
             new ReleaseNotes(
               this.app,
               this,
-              isFirstInstall ? null : currentVersion,
+              currentVersion,
+              isFirstInstall,
             ).open();
           } catch (e) {
             new Notice("Error opening release notes", 6000);

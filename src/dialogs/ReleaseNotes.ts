@@ -16,7 +16,11 @@ export interface IHorizontalBlocksPlugin {
  * ReleaseNotes modal — displayed once per version upgrade.
  *
  * Mirrors the Excalidraw plugin pattern:
- *  - Accepts `null` as version for first-run (shows FIRST_RUN message).
+ *  - `version` is always the current version string (never null).
+ *  - `isFirstRun` controls whether to show the welcome message or the
+ *    version-filtered changelog. Keeping version and content-selection
+ *    separate ensures onClose() always saves previousRelease, preventing
+ *    the popup from re-appearing on every Obsidian launch after a fresh install.
  *  - Filters RELEASE_NOTES to only show entries newer than previousRelease,
  *    catching up across multi-version upgrades.
  *  - Uses Obsidian's native MarkdownRenderer so content renders with full
@@ -26,19 +30,21 @@ export interface IHorizontalBlocksPlugin {
  */
 export class ReleaseNotes extends Modal {
   private plugin: IHorizontalBlocksPlugin;
-  private version: string | null;
+  private version: string;
+  private isFirstRun: boolean;
 
-  constructor(app: App, plugin: IHorizontalBlocksPlugin, version: string | null) {
+  constructor(app: App, plugin: IHorizontalBlocksPlugin, version: string, isFirstRun = false) {
     super(app);
     this.plugin = plugin;
     this.version = version;
+    this.isFirstRun = isFirstRun;
   }
 
   onOpen(): void {
     const { containerEl, contentEl } = this as any;
     containerEl.classList.add("hblocks-release");
     (this as any).titleEl?.setText(
-      `🧱 Horizontal Blocks ${this.version ? `v${this.version}` : "— Welcome!"}`
+      `🧱 Horizontal Blocks ${this.isFirstRun ? "— Welcome!" : `v${this.version}`}`
     );
     this.createForm(contentEl);
   }
@@ -50,8 +56,9 @@ export class ReleaseNotes extends Modal {
     // all notes show (guards against accidental double-opens).
     if (this.version === prevRelease) prevRelease = "0.0.0";
 
-    const message = this.version
-      ? Object.keys(RELEASE_NOTES)
+    const message = this.isFirstRun
+      ? FIRST_RUN
+      : Object.keys(RELEASE_NOTES)
           .filter(
             (key) => key === "Intro" || isVersionNewerThanOther(key, prevRelease)
           )
@@ -60,8 +67,7 @@ export class ReleaseNotes extends Modal {
               `${key === "Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`
           )
           .slice(0, 10)
-          .join("\n\n---\n")
-      : FIRST_RUN;
+          .join("\n\n---\n");
 
     await MarkdownRenderer.render(this.app, message, contentEl, "", this.plugin as any);
 
@@ -75,8 +81,9 @@ export class ReleaseNotes extends Modal {
 
   async onClose(): Promise<void> {
     this.contentEl.empty();
-    // Persist previousRelease on close so the modal only shows once per version.
-    if (this.version && this.plugin.settings.previousRelease !== this.version) {
+    // Always persist previousRelease on close — version is never null now,
+    // so first-run installs are correctly stamped and won't loop.
+    if (this.plugin.settings.previousRelease !== this.version) {
       this.plugin.settings.previousRelease = this.version;
       await this.plugin.saveData(this.plugin.settings);
     }
